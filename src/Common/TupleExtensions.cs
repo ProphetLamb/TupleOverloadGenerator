@@ -8,6 +8,15 @@ namespace System;
 /// Extensions allowing Span access to a ValueTuple
 /// </summary>
 public static class TupleSpanExtensions {
+    /// <inheritdoc cref="System.Span{T}.GetPinnableReference()" />
+    public static unsafe ref T GetPinnableReference<T>(this T[] array) {
+        if (array.Length > 0) {
+            return ref array[0];
+        }
+
+        return ref Unsafe.AsRef<T>((void*)default(IntPtr));
+    }
+
     /// <inheritdoc cref="System.MemoryExtensions.AsSpan{T}(T[])" />
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Span<T> AsRoSpan<T>(this T[] array) {
