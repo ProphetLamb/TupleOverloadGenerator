@@ -8,9 +8,12 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace TupleOverloadGenerator;
 
+/// <summary>Overload `params` array parameter with tuples avoiding heap allocations.</summary>
+/// <remarks>ONLY REFERENCE THIS PROJECT AS A ANALYZER, NOT A ASSET</remarks>
 [Generator]
 public sealed class Generator : IIncrementalGenerator
 {
+    /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var typeContexts = context.SyntaxProvider
