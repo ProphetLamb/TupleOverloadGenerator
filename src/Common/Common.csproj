@@ -2,8 +2,12 @@
 
 	<PropertyGroup>
 		<TargetFrameworks>netstandard21;net70</TargetFrameworks>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<PropertyGroup Label="Nuget Pack Options">
+		<Description>Required typed for TupleOverloadGenerator. Overloads params array argument with inline tuples, circumventing heap allocations.</Description>
+		<AssemblyName>TupleOverloadGenerator.Types</AssemblyName>
+		<PackageTags>Roslyn Source Generator Types Tuple Params Overload Unsafe</PackageTags>
 	</PropertyGroup>
 
 	<ItemGroup Condition="!$(DefineConstants.Contains('NET6_0_OR_GREATER'))">
