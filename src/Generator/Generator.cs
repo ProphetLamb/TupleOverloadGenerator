@@ -48,49 +48,52 @@ public sealed class Generator : IIncrementalGenerator
                 => param.AttributeLists.Any()) ? method : default);
 
         var methods = ImmutableArray.CreateBuilder<MethodContext>();
-        foreach (MethodDeclarationSyntax method in methodsWithAttributes)
-        {
-            methods.Add(GetMethodContext(ctx, method));
+        foreach (MethodDeclarationSyntax method in methodsWithAttributes) {
+            var methodContext = GetMethodContext(ctx, method);
+            if (!methodContext.IsDefault) {
+                methods.Add(methodContext);
+            }
             ct.ThrowIfCancellationRequested();
         }
 
         return new(typeDecl, methods.ToImmutable());
     }
 
-    private static MethodContext GetMethodContext(GeneratorSyntaxContext ctx, MethodDeclarationSyntax method)
-    {
-        var parameters = ImmutableArray.CreateBuilder<(ParameterSyntax, string)>();
-        foreach (ParameterSyntax param in method.ParameterList.Parameters)
-        {
-            if (IsOverloadTupleParameter(ctx, param) && IsParamsArrayParameter(param))
-            {
-                var info = ctx.SemanticModel.GetSymbolInfo(param.Type!);
-                if (info.Symbol is IArrayTypeSymbol type)
-                {
-                    parameters.Add((param, type.ElementType.Name));
-                }
-            }
-        }
-
-        return new(method, parameters.ToImmutable());
+    private static MethodContext GetMethodContext(GeneratorSyntaxContext ctx, MethodDeclarationSyntax method) {
+        return method.ParameterList.Parameters
+           .FilterMap(param => GetParamContext(ctx, param) is { IsDefault: false } context ? new MethodContext(method, context).Nullable() : default)
+           .FirstOrDefault();
     }
 
-    private static bool IsOverloadTupleParameter(GeneratorSyntaxContext ctx, BaseParameterSyntax param)
-    {
-        foreach (AttributeSyntax attribute in param.AttributeLists.Attributes())
-        {
-            var model = ctx.SemanticModel.GetTypeInfo(attribute);
-            if (model.Type is not null)
-            {
-                var typeName = model.Type.ToDisplayString();
-                if (typeName == Helper.AttributeTypeName)
-                {
-                    return true;
+    private static ParamContext GetParamContext(GeneratorSyntaxContext ctx, ParameterSyntax param) {
+        if (GetOverloadTupleParameter(ctx, param) is not { } attribute || !IsParamsArrayParameter(param)) {
+            return default;
+        }
+
+        // read minimum and maximum value
+        int min = 1, max = 21;
+        if (attribute.ArgumentList is not null) {
+            if (ParseArgumentInt(attribute.ArgumentList.Arguments, "Minimum", out min)
+              | ParseArgumentInt(attribute.ArgumentList.Arguments, "Maximum", out max)) {
+                if (min >= max || min is < 1 or > 21 || max is < 1 or > 21) {
+                    return default;
                 }
             }
         }
 
-        return false;
+        var info = ctx.SemanticModel.GetSymbolInfo(param.Type!);
+        if (info.Symbol is not IArrayTypeSymbol type) {
+            return default;
+        }
+
+        return new(param, type.ElementType.Name, min, max);
+    }
+
+    private static AttributeSyntax? GetOverloadTupleParameter(GeneratorSyntaxContext ctx, BaseParameterSyntax param) {
+        return param.AttributeLists.Attributes().FilterMap(attribute
+            => ctx.SemanticModel.GetTypeInfo(attribute) is { Type: { } type }
+            && type.ToDisplayString() == Helper.AttributeTypeName ? attribute : default
+        ).FirstOrDefault();
     }
 
     private static bool IsParamsArrayParameter(BaseParameterSyntax param)
@@ -98,18 +101,29 @@ public sealed class Generator : IIncrementalGenerator
         return param.Modifiers.Any(static modifier => modifier.Text == "params");
     }
 
-    private static void Execute(ImmutableArray<TypeContext> classes, SourceProductionContext context)
-    {
-        if (!classes.IsDefaultOrEmpty)
-        {
-            var distinctClasses = classes.Distinct();
-            foreach ((SyntaxToken name, CompilationUnitSyntax compilation) in distinctClasses.FilterMap(static typeContext
-                => GenerateSyntaxTree(typeContext) is { } compilation ? (typeContext.Declaration.Identifier, compilation).Nullable() : default))
-            {
-                SourceText sourceText = compilation.GetText(Encoding.Default);
-                context.AddSource($"{name.Text}.{Helper.AttributeName}.g.cs", sourceText);
-            }
+    private static bool ParseArgumentInt(SeparatedSyntaxList<AttributeArgumentSyntax> args, string name, out int value) {
+        value = 0;
+        return args.FirstOrDefault(arg
+                => arg.NameEquals?.Name.Identifier.Text == name) is { Expression: LiteralExpressionSyntax minLiteral }
+         && int.TryParse(minLiteral.Token.ValueText, out value);
+    }
+
+    private static void Execute(ImmutableArray<TypeContext> classes, SourceProductionContext context) {
+        if (classes.IsDefaultOrEmpty) {
+            return;
         }
+
+        object guard = new();
+        var distinctClasses = classes.Distinct();
+        Parallel.ForEach(distinctClasses.FilterMap(static typeContext
+                    => GenerateSyntaxTree(typeContext) is { } compilation ? (typeContext.Declaration.Identifier, Unit: compilation).Nullable() : default),
+            ctx => {
+                SourceText sourceText = ctx.Unit.GetText(Encoding.Default);
+                lock(guard) {
+                    context.AddSource($"{ctx.Identifier.Text}.{Helper.AttributeName}.g.cs", sourceText);
+                }
+            }
+        );
     }
 
     private static CompilationUnitSyntax? GenerateSyntaxTree(TypeContext typeContext) {
@@ -128,8 +142,8 @@ public sealed class Generator : IIncrementalGenerator
 
     private static TypeDeclarationSyntax ModifyTypeDeclaration(TypeContext typeContext, SyntaxList<MemberDeclarationSyntax> members) {
         var declSyntax = typeContext.Declaration.WithMembers(members);
-        // for records we must remove the parameterlist: 'record Concatinate(string Prefix, string Suffix) {}' -> 'record Concatinate {}'
-        if (declSyntax is RecordDeclarationSyntax record && record.ParameterList is not null) {
+        // for records we must remove the parameterlist: 'record Concat(string Prefix, string Infix, string Suffix) {}' -> 'record Concat {}'
+        if (declSyntax is RecordDeclarationSyntax { ParameterList: { } } record) {
             declSyntax = record.RemoveNode(record.ParameterList, SyntaxRemoveOptions.KeepNoTrivia) ?? declSyntax;
         }
 
@@ -139,8 +153,8 @@ public sealed class Generator : IIncrementalGenerator
     private static CompilationUnitSyntax? ModifyCompilationUnit(TypeContext typeContext, MemberDeclarationSyntax declSyntax) {
         // the partial modifier only effects members of the same namespace
         var namespaceDecl = typeContext.Declaration.ParentOf<BaseNamespaceDeclarationSyntax>();
-        var compilationUnit = namespaceDecl?.ParentOf<CompilationUnitSyntax>();
-        if (namespaceDecl is null || compilationUnit is null)
+        var unit = namespaceDecl?.ParentOf<CompilationUnitSyntax>();
+        if (namespaceDecl is null || unit is null)
         {
             return default;
         }
@@ -150,46 +164,58 @@ public sealed class Generator : IIncrementalGenerator
         var modifiedNamespace = namespaceDecl.WithMembers(namespaceMembers);
 
         var unitMembers = SyntaxFactory.List(Enumerable.Repeat<MemberDeclarationSyntax>(modifiedNamespace, 1));
-        var modifiedUnit = compilationUnit?.WithMembers(unitMembers);
-        return modifiedUnit;
+        unit = unit.WithMembers(unitMembers);
+        return unit;
     }
 
     private static IEnumerable<MethodDeclarationSyntax> CreateMember(MethodContext method)
     {
-        foreach ((ParameterSyntax param, string elementType) in method.Param)
+        foreach (ParameterSyntax newParam in CreateTupleParameters(method.Param))
         {
-            foreach (ParameterSyntax newParam in CreateTupleParameters(param, elementType))
-            {
-                ParameterListSyntax paramList = method.Method.ParameterList;
-                var parameters = paramList.Parameters.Replace(param, newParam);
-                var newParamList = paramList.WithParameters(parameters);
-                yield return method.Method.WithParameterList(newParamList);
-            }
+            ParameterListSyntax paramList = method.Method.ParameterList;
+            var parameters = paramList.Parameters.Replace(method.Param.Param, newParam);
+            var newParamList = paramList.WithParameters(parameters);
+            yield return method.Method.WithParameterList(newParamList);
         }
     }
 
-    private static IEnumerable<ParameterSyntax> CreateTupleParameters(ParameterSyntax paramsArray, string elementType)
+    private static IEnumerable<ParameterSyntax> CreateTupleParameters(ParamContext context)
     {
         // remove params from the modifiers
-        var paramModifier = paramsArray.Modifiers.First(static modifier => modifier.ToString() == "params");
-        var modifiers = paramsArray.Modifiers.Remove(paramModifier);
+        var paramModifier = context.Param.Modifiers.First(static modifier => modifier.ToString() == "params");
+        var modifiers = context.Param.Modifiers.Remove(paramModifier);
         // create tuple element from the element type name
-        var elementSyntax = SyntaxFactory.ParseTypeName(elementType);
+        var elementSyntax = SyntaxFactory.ParseTypeName(context.ElementType);
         var tupleElement = SyntaxFactory.TupleElement(elementSyntax);
-
-        for (int i = 2; i <= 7; i++)
+        if (context.Minimum == 1) {
+            // `ValueTuple<T>` as `(T)` is invalid syntax. Explicit type is required for count = 1
+            yield return CreateParameter(context, modifiers, CreateValueTuple(elementSyntax, 1));
+        }
+        for (int i = Math.Max(2, context.Minimum); i <= context.Maximum; i++)
         {
-            yield return CreateTupleParameter(paramsArray.AttributeLists, modifiers, tupleElement, i, paramsArray.Identifier);
+            yield return CreateParameter(context, modifiers, CreateTuple(tupleElement, i));
         }
     }
 
-    private static ParameterSyntax CreateTupleParameter(SyntaxList<AttributeListSyntax> attributes, SyntaxTokenList modifiers, TupleElementSyntax elementType, int count, SyntaxToken identifier)
+    private static SyntaxTrivia[] SpaceTrivia { get; } = { SyntaxFactory.Space };
+
+    private static ParameterSyntax CreateParameter(ParamContext context, SyntaxTokenList modifiers, TypeSyntax type) {
+
+        // add space after type 'ValueTuple<T>elements' -> 'ValueTuple<T> elements'
+        var typeWithTrivia = type.WithTrailingTrivia(SpaceTrivia);
+        return SyntaxFactory.Parameter(context.Param.AttributeLists, modifiers, typeWithTrivia, context.Param.Identifier, default);
+    }
+
+    private static SyntaxToken ValueTupleIdentifier { get; } = SyntaxFactory.Identifier("ValueTuple");
+
+    private static GenericNameSyntax CreateValueTuple(TypeSyntax elementType, int count) {
+        var typeArgs = SyntaxFactory.SeparatedList(Enumerable.Repeat(elementType, count));
+        return SyntaxFactory.GenericName(ValueTupleIdentifier, SyntaxFactory.TypeArgumentList(typeArgs));
+    }
+
+    private static TupleTypeSyntax CreateTuple(TupleElementSyntax elementType, int count)
     {
         var tupleElements = SyntaxFactory.SeparatedList(Enumerable.Repeat(elementType, count));
-        var tupleType = SyntaxFactory.TupleType(tupleElements);
-        // add space after type '(T,T,T)elements' -> '(T,T,T) elements'
-        tupleType = tupleType.WithTrailingTrivia(SyntaxFactory.Space);
-
-        return SyntaxFactory.Parameter(attributes, modifiers, tupleType, identifier, default);
+        return SyntaxFactory.TupleType(tupleElements);
     }
 }

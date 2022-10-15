@@ -1,21 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-using FluentAssertions;
-
-using Xunit;
-
 namespace TupleOverloadGenerator.UsageTests;
 
-public class AffixConcatTests {
-    [Fact]
-    public void TupleTwoTest() {
-        AffixConcat concat = new("[", "]");
-        concat.Concat(("First", "Second")).Should().BeEquivalentTo(concat.Concat("First", "Second"));
-    }
-}
 
-public partial record AffixConcat(string Prefix, string Suffix) {
+public partial record AffixConcat(string Prefix, string Infix, string Suffix) {
     public string Concat(ReadOnlySpan<string> parts) {
         StringBuilder sb = new();
         sb.Append(Prefix);
@@ -23,7 +13,7 @@ public partial record AffixConcat(string Prefix, string Suffix) {
         if (en.MoveNext()) {
             sb.Append(en.Current);
             while (en.MoveNext()) {
-                sb.Append(", ");
+                sb.Append(Infix);
                 sb.Append(en.Current);
             }
         }
@@ -35,5 +25,18 @@ public partial record AffixConcat(string Prefix, string Suffix) {
     public string Concat([TupleOverload] params string[] parts) {
         ReadOnlySpan<string> partsSpan = parts.AsSpan();
         return Concat(partsSpan);
+    }
+
+    public string ConcatFourOrMore([TupleOverload(Minimum = 4)] params string[] parts) {
+        ReadOnlySpan<string> partsSpan = parts.AsSpan();
+        if (partsSpan.Length < 4) {
+            ThrowLessThenFour();
+        }
+        return Concat(partsSpan);
+    }
+
+    [DoesNotReturn]
+    private static void ThrowLessThenFour() {
+        throw new ArgumentOutOfRangeException("parts", "Parts must contain four or more elements");
     }
 }

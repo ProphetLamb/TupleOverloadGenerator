@@ -12,7 +12,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Generator", "src\Generator\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{58BF139E-0A36-4EA0-91F7-D6A10BB4F179}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeneratorTests", "tests\GeneratorTests\GeneratorTests.csproj", "{AC4F50E6-A5CF-4310-8070-40734347B16B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SnapshotTests", "tests\SnapshotTests\SnapshotTests.csproj", "{AC4F50E6-A5CF-4310-8070-40734347B16B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{35561E77-9F6A-418F-A753-597F329C3B40}"
 EndProject
