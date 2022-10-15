@@ -73,8 +73,8 @@ public sealed class Generator : IIncrementalGenerator
         // read minimum and maximum value
         int min = 1, max = 21;
         if (attribute.ArgumentList is not null) {
-            if (ParseArgumentInt(attribute.ArgumentList.Arguments, "Minimum", out min)
-              | ParseArgumentInt(attribute.ArgumentList.Arguments, "Maximum", out max)) {
+            if (ParseArgumentInt(attribute.ArgumentList.Arguments, "Minimum", ref min)
+              | ParseArgumentInt(attribute.ArgumentList.Arguments, "Maximum", ref max)) {
                 if (min >= max || min is < 1 or > 21 || max is < 1 or > 21) {
                     return default;
                 }
@@ -90,19 +90,17 @@ public sealed class Generator : IIncrementalGenerator
     }
 
     private static AttributeSyntax? GetOverloadTupleParameter(GeneratorSyntaxContext ctx, BaseParameterSyntax param) {
-        return param.AttributeLists.Attributes().FilterMap(attribute
+        return param.AttributeLists.Attributes().FilterMapFirst(attribute
             => ctx.SemanticModel.GetTypeInfo(attribute) is { Type: { } type }
-            && type.ToDisplayString() == Helper.AttributeTypeName ? attribute : default
-        ).FirstOrDefault();
+            && type.ToDisplayString() is Helper.ATTRIBUTE_TYPE_NAME or Helper.ATTRIBUTE_NAME ? attribute : default
+        );
     }
 
-    private static bool IsParamsArrayParameter(BaseParameterSyntax param)
-    {
+    private static bool IsParamsArrayParameter(BaseParameterSyntax param) {
         return param.Modifiers.Any(static modifier => modifier.Text == "params");
     }
 
-    private static bool ParseArgumentInt(SeparatedSyntaxList<AttributeArgumentSyntax> args, string name, out int value) {
-        value = 0;
+    private static bool ParseArgumentInt(SeparatedSyntaxList<AttributeArgumentSyntax> args, string name, ref int value) {
         return args.FirstOrDefault(arg
                 => arg.NameEquals?.Name.Identifier.Text == name) is { Expression: LiteralExpressionSyntax minLiteral }
          && int.TryParse(minLiteral.Token.ValueText, out value);
@@ -120,7 +118,7 @@ public sealed class Generator : IIncrementalGenerator
             ctx => {
                 SourceText sourceText = ctx.Unit.GetText(Encoding.Default);
                 lock(guard) {
-                    context.AddSource($"{ctx.Identifier.Text}.{Helper.AttributeName}.g.cs", sourceText);
+                    context.AddSource($"{ctx.Identifier.Text}.{Helper.ATTRIBUTE_NAME}.g.cs", sourceText);
                 }
             }
         );
@@ -156,6 +154,7 @@ public sealed class Generator : IIncrementalGenerator
         var unit = namespaceDecl?.ParentOf<CompilationUnitSyntax>();
         if (namespaceDecl is null || unit is null)
         {
+            // TODO: diagnostics
             return default;
         }
 

@@ -1,9 +1,9 @@
-﻿using System.Text;
+using System.Text;
 
 namespace TupleOverloadGenerator.Tests;
 
 [UsesVerify]
-public class SnapshotTestSimple
+public class SimpleTests
 {
     [Fact]
     public Task GeneratesEnumExtensionsCorrectly()
@@ -11,6 +11,8 @@ public class SnapshotTestSimple
         // The source code to test
         var source = @"using System;
 using System.Text;
+
+namespace TupleOverloadGenerator.Tests;
 
 internal partial class TestClass {
     public string Concat<T>(ReadOnlySpan<T> parts) {
@@ -26,7 +28,7 @@ internal partial class TestClass {
         return Concat<T>(partsSpan);
     }
 }
-";  
+";
         return TestHelper.Verify(source);
     }
 }
