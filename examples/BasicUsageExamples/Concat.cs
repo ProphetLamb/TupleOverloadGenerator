@@ -3,7 +3,7 @@ using System.Text;
 
 namespace BasicUsageExamples; 
 
-internal partial class TestClass {
+internal sealed partial class TestClass {
     public string Concat<T>(ReadOnlySpan<T> parts) {
         StringBuilder sb = new();
         foreach(T part in parts) {

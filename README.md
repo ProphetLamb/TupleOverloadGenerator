@@ -43,7 +43,7 @@ using System.Text;
 
 namespace BasicUsageExamples;
 
-public partial readonly struct record AffixConcat(string Prefix, string Infix, string Suffix) {
+public partial readonly record struct AffixConcat(string Prefix, string Infix, string Suffix) {
     public string Concat(ReadOnlySpan<string> parts) {
         StringBuilder sb = new();
         sb.Append(Prefix);
