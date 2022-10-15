@@ -1,5 +1,9 @@
-# TupleOverloadGenerator
-
+<br />
+<p align="center">
+	<img src="img/banner.png" alt="Logo" width="305" height="125">
+</p>
+<h1 align="center">TupleOverloadGenerator</h1>
+<p align="center">Overload `params` array parameter with tuples avoiding heap allocations.</p>
 ## Supported
 
 [Generator](https://www.nuget.org/packages/TupleOverloadGenerator) and [Types](https://www.nuget.org/packages/TupleOverloadGenerator.Types) NuGet package:
@@ -20,6 +24,9 @@ Historically the `params` keyword followed by an array type `string[]` has been 
 However an array introduces a few problems, the most prevalent of which is that the array is allocated on the heap.
 
 Modern libraries should therefore allow the user to pass a `Span` instead of an array, this approach is the most performant, yet calling the function is inconvenient and still requires a heap allocation for non managed, blittable types, where `stackalloc` is not usable.
+
+| **DONT** |
+| -------- |
 ```csharp
 Span<string> parts = stackalloc string[12];
 parts[0] = "Hello"; [...]
@@ -27,8 +34,23 @@ AffixConcat concat = new("[", "]");
 return concat.Concat(parts);
 ```
 
+Alternatively an `ArrayPool` can be used, reducing the number of allocations from `n` to `1` for any given size. We still have allocations, and the syntax becomes even more unwieldy.
+
+| **DONT** |
+| -------- |
+```csharp
+var poolArray = ArrayPool<string>.Shared.Rent(12);
+Span<string> parts = poolArray.AsSpan(0, 12);
+parts[0] = "Hello"; [...]
+AffixConcat concat = new("[", "]");
+var result = concat.Concat(parts);
+ArrayPool<string>.Shared.Return(poolArray);
+```
+
 The solution is overloads with inline arrays. These can be represented by tuples with a single generic type parameter. This source generator generates these overloads for parameters decorated with the `[TupleOverload]` attribute.
 
+| **DO** |
+| ------ |
 ```csharp
 AffixConcat concat = new("[", ", ", "]");
 return concat.Concat(("Hello", "World"));

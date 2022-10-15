@@ -28,6 +28,6 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
 		<None Include="$(SolutionDir)/README.md" Pack="true" PackagePath="\" />
-		<None Include="$(SolutionDir)/icon.png" Pack="true" PackagePath="\" />
+		<None Include="$(SolutionDir)/img/icon.png" Pack="true" PackagePath="\" />
 	</ItemGroup>
 </Project>
