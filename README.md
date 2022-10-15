@@ -107,7 +107,7 @@ This is unsafe, because RYU may reorder the the items, so that the following lay
 [Item2][padding][Item1][padding][Item3][padding]
 ```
 
-If the structure has padding, or is reordered this will not work! Therefore its best used with pointer sized values, such as `nint`, `object`, `Func<>`, etc..
+If the structure has padding inconsistent with the array allocation padding (which is unlikely, but again undefined), or the structure is reordered this will not work! Therefore its best used with pointer sized values, such as `nint`, `object`, `Func<>`, etc..
 
 ### AsSpan
 As span creates a span from the reference to the first element in the tuple with length equal to the number of elements in the tuple.
