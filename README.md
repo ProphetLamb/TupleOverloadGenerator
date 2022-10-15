@@ -2,14 +2,14 @@
 
 ## Supported
 
-[NuGet package](https://www.nuget.org/packages/TupleOverloadGenerator):
+[Generator](https://www.nuget.org/packages/TupleOverloadGenerator) and [Types](https://www.nuget.org/packages/TupleOverloadGenerator.Types) NuGet package:
 ```xml
-<PackageReference Include="TupleOverloadGenerator" Version="1.0.0" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+<PackageReference Include="TupleOverloadGenerator.Types" Version="1.0.1" />
+<PackageReference Include="TupleOverloadGenerator" Version="1.0.1" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
 ```
 
-* .NETCoreApp 3.1
 * .NET 6.0 or greater
-* .NETStandard 2.1 with [System.Memory](https://www.nuget.org/packages/System.Memory) and [System.Runtime.CompilerServices.Unsafe](https://www.nuget.org/packages/System.Runtime.CompilerServices.Unsafe) packages installed.
+* .NETStandard 2.1 compatible with [System.Memory](https://www.nuget.org/packages/System.Memory) and [System.Runtime.CompilerServices.Unsafe](https://www.nuget.org/packages/System.Runtime.CompilerServices.Unsafe) packages installed.
 
 This is experimental and uses undefined behaviour! Only tested on Linux
 
