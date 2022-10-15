@@ -1,9 +1,10 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace InheritInterfaceDefaultMethods; 
+namespace TupleOverloadGenerator;
 
-public static class Helper {
+public static class Helper
+{
     public static string AttributeSource = @"namespace System {
     [AttributeUsage(AttributeTargets.Parameter, Inherited = false)]
     public class OverloadTupleAttribute: Attribute {
@@ -97,19 +98,24 @@ namespace System {
     }
 }
 ";
-    
-    public static IEnumerable<AttributeSyntax> Attributes(this SyntaxList<AttributeListSyntax> lst) {
+
+    public static IEnumerable<AttributeSyntax> Attributes(this SyntaxList<AttributeListSyntax> lst)
+    {
         foreach (AttributeListSyntax attributeListSyntax in lst)
         {
-            foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes) {
+            foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
+            {
                 yield return attributeSyntax;
             }
         }
     }
 
-    public static T? ParentOf<T>(this SyntaxNode? node) {
-        while (node is not null) {
-            if (node is T res) {
+    public static T? ParentOf<T>(this SyntaxNode? node)
+    {
+        while (node is not null)
+        {
+            if (node is T res)
+            {
                 return res;
             }
 
@@ -120,8 +126,9 @@ namespace System {
     }
 
     public static T ReplaceSyntax<T, U>(this T root, U replace, U with)
-        where T: SyntaxNode
-        where U: SyntaxNode {
+        where T : SyntaxNode
+        where U : SyntaxNode
+    {
         return root.ReplaceSyntax(
             Enumerable.Repeat(replace, 1), (node, syntaxNode) => node == replace ? with : syntaxNode,
             null, null,
@@ -129,16 +136,22 @@ namespace System {
         );
     }
 
-    public static IEnumerable<T> NotNull<T>(this IEnumerable<T?> seq) {
-        foreach (T? item in seq) {
-            if (item is not null) {
+    public static IEnumerable<T> NotNull<T>(this IEnumerable<T?> seq)
+    {
+        foreach (T? item in seq)
+        {
+            if (item is not null)
+            {
                 yield return item;
             }
         }
     }
-    public static IEnumerable<T> NotNull<T, U>(this IEnumerable<T> seq, Func<T, U?> nullableSelector) {
-        foreach (T? item in seq) {
-            if (nullableSelector(item) is not null) {
+    public static IEnumerable<T> NotNull<T, U>(this IEnumerable<T> seq, Func<T, U?> nullableSelector)
+    {
+        foreach (T? item in seq)
+        {
+            if (nullableSelector(item) is not null)
+            {
                 yield return item!;
             }
         }
