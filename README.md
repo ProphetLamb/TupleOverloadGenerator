@@ -3,7 +3,8 @@
 	<img src="img/banner.png" alt="Logo" width="305" height="125">
 </p>
 <h1 align="center">TupleOverloadGenerator</h1>
-<p align="center">Overload `params` array parameter with tuples avoiding heap allocations.</p>
+<p align="center">Overload <code>params</code> array parameter with tuples avoiding heap allocations.</p>
+
 ## Supported
 
 [Generator](https://www.nuget.org/packages/TupleOverloadGenerator) and [Types](https://www.nuget.org/packages/TupleOverloadGenerator.Types) NuGet package:
