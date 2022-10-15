@@ -3,10 +3,13 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace TupleOverloadGenerator;
 
-public static class Helper {
+internal  static class Helper {
     public static string AttributeName => "TupleOverloadAttribute";
     public static string AttributeTypeName => "System.TupleOverloadAttribute";
     public static string AttributeSource => @"namespace System {
+    /// <summary>Decorates a params array parameter, `[TupleOverload] params string[] parts`.
+    /// Generates overloads for the parameter with tuples consisting of 2 through 7 members.
+    /// The parameter `parts` must only be used to obtain a span, nothing more! The span can then be passed to another function.</summary>
     [AttributeUsage(AttributeTargets.Parameter, Inherited = false)]
     public class TupleOverloadAttribute: Attribute {
 
@@ -48,54 +51,29 @@ namespace System {
         }
 
         // Allows accessing the contents of a ValueTuple like with the ITuple indexer, with no casting or copying involved
-        public static ReadOnlySpan<T> RefSpan<T>(in this ValueTuple<T, T> tuple) {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ReadOnlySpan<T> AsSpan<T>(in this ValueTuple<T, T> tuple) {
             return MemoryMarshal.CreateReadOnlySpan(ref tuple.GetPinnableReference(), 2);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ReadOnlySpan<T> RefSpan<T>(in this ValueTuple<T, T, T> tuple) {
+        public static ReadOnlySpan<T> AsSpan<T>(in this ValueTuple<T, T, T> tuple) {
             return MemoryMarshal.CreateReadOnlySpan(ref tuple.GetPinnableReference(), 3);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ReadOnlySpan<T> RefSpan<T>(in this ValueTuple<T, T, T, T> tuple) {
+        public static ReadOnlySpan<T> AsSpan<T>(in this ValueTuple<T, T, T, T> tuple) {
             return MemoryMarshal.CreateReadOnlySpan(ref tuple.GetPinnableReference(), 4);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ReadOnlySpan<T> RefSpan<T>(in this ValueTuple<T, T, T, T, T> tuple) {
+        public static ReadOnlySpan<T> AsSpan<T>(in this ValueTuple<T, T, T, T, T> tuple) {
             return MemoryMarshal.CreateReadOnlySpan(ref tuple.GetPinnableReference(), 5);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ReadOnlySpan<T> RefSpan<T>(in this ValueTuple<T, T, T, T, T, T> tuple) {
+        public static ReadOnlySpan<T> AsSpan<T>(in this ValueTuple<T, T, T, T, T, T> tuple) {
             return MemoryMarshal.CreateReadOnlySpan(ref tuple.GetPinnableReference(), 6);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ReadOnlySpan<T> RefSpan<T>(in this ValueTuple<T, T, T, T, T, T, T> tuple) {
+        public static ReadOnlySpan<T> AsSpan<T>(in this ValueTuple<T, T, T, T, T, T, T> tuple) {
             return MemoryMarshal.CreateReadOnlySpan(ref tuple.GetPinnableReference(), 7);
-        }
-
-        // Allows modifying the ValueTuple. Note that this gets dirty memory when not inlined by the RYU, only tested with net6 and net7rc1
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Span<T> AsSpan<T>(this ValueTuple<T, T> tuple) {
-            return MemoryMarshal.CreateSpan(ref tuple.GetPinnableReference(), 2);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Span<T> AsSpan<T>(this ValueTuple<T, T, T> tuple) {
-            return MemoryMarshal.CreateSpan(ref tuple.GetPinnableReference(), 3);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Span<T> AsSpan<T>(this ValueTuple<T, T, T, T> tuple) {
-            return MemoryMarshal.CreateSpan(ref tuple.GetPinnableReference(), 4);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Span<T> AsSpan<T>(this ValueTuple<T, T, T, T, T> tuple) {
-            return MemoryMarshal.CreateSpan(ref tuple.GetPinnableReference(), 5);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Span<T> AsSpan<T>(this ValueTuple<T, T, T, T, T, T> tuple) {
-            return MemoryMarshal.CreateSpan(ref tuple.GetPinnableReference(), 6);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Span<T> AsSpan<T>(this ValueTuple<T, T, T, T, T, T, T> tuple) {
-            return MemoryMarshal.CreateSpan(ref tuple.GetPinnableReference(), 7);
         }
     }
 }

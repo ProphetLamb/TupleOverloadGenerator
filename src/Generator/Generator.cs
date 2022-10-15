@@ -153,7 +153,7 @@ public sealed class Generator : IIncrementalGenerator
         // the partial modifier only effects members of the same namespace
         var namespaceDecl = typeContext.Declaration.ParentOf<BaseNamespaceDeclarationSyntax>();
         var compilationUnit = namespaceDecl?.ParentOf<CompilationUnitSyntax>();
-        if (compilationUnit is null)
+        if (namespaceDecl is null || compilationUnit is null)
         {
             return default;
         }
