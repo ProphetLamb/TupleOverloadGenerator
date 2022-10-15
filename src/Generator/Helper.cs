@@ -7,12 +7,9 @@ internal  static class Helper {
     public const string ATTRIBUTE_NAME = "TupleOverload";
     public const string ATTRIBUTE_TYPE_NAME = "System.TupleOverloadAttribute";
 
-    public static IEnumerable<AttributeSyntax> Attributes(this SyntaxList<AttributeListSyntax> lst)
-    {
-        foreach (AttributeListSyntax attributeListSyntax in lst)
-        {
-            foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
-            {
+    public static IEnumerable<AttributeSyntax> Attributes(this SyntaxList<AttributeListSyntax> lst) {
+        foreach (AttributeListSyntax attributeListSyntax in lst) {
+            foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes) {
                 yield return attributeSyntax;
             }
         }
@@ -20,10 +17,8 @@ internal  static class Helper {
 
     public static T? ParentOf<T>(this SyntaxNode? node)
     {
-        while (node is not null)
-        {
-            if (node is T res)
-            {
+        while (node is not null) {
+            if (node is T res){
                 return res;
             }
 
@@ -52,7 +47,7 @@ internal  static class Helper {
         }
     }
 
-    public static U? FilterMapFirst<T, U>(this IEnumerable<T> nodes, Func<T, U?> f)
+    public static U? FilterMapFirst<T, U>(this IEnumerable<T> nodes, Func<T, U?> f, U? fb = default)
         where U : class {
         foreach (T element in nodes) {
             if (f(element) is { } res) {
@@ -60,10 +55,10 @@ internal  static class Helper {
             }
         }
 
-        return default;
+        return fb;
     }
 
-    public static U? FilterMapFirst<T, U>(this IEnumerable<T> nodes, Func<T, Nullable<U>> f)
+    public static U? FilterMapFirst<T, U>(this IEnumerable<T> nodes, Func<T, Nullable<U>> f, U? fb = default)
         where U : struct {
         foreach (T element in nodes) {
             var res = f(element);
@@ -72,12 +67,11 @@ internal  static class Helper {
             }
         }
 
-        return default;
+        return fb;
     }
 
     public static Nullable<T> Nullable<T>(this T value)
-        where T : struct
-    {
+        where T : struct {
         return value;
     }
 }
