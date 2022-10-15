@@ -78,12 +78,12 @@ Please note that the example above is for demonstration purposes only! I advice 
 
 ## Behind the scenes
 
-Primarly the source generator **replaces** the parameter type with a given tuple type (e.g `(string, string, string)`) for two through seven parameters. Tuples are fast for 2-7 parameters.
+Primarly the source generator **replaces** the parameter type with a given tuple type (e.g `(string, string, string)`).
 
 **Q: Tuples cannot be cast to a span can they?**
 No, they cannot. At least not trivially. To obtain a span from a tuple, we have to cheat, and by cheat I mean unsafe hacks that may not work in the future.
 
-The source generator adds the following extension methods to the value types types with 2-7 parameters:
+The source generator adds the following extension methods to the value types types with 1-21 parameters:
 
 ```csharp
 using System.Runtime.CompilerServices;
