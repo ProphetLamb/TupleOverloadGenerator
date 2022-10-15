@@ -61,7 +61,7 @@ public partial readonly record struct AffixConcat(string Prefix, string Infix, s
 
     public string Concat([TupleOverload] params string[] parts) {
         ReadOnlySpan<string> partsSpan = parts.AsSpan();
-        return ConcatInternal(partsSpan);
+        return Concat(partsSpan);
     }
 }
 ```
