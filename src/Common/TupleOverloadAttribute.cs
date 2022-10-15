@@ -11,21 +11,21 @@ public class TupleOverloadAttribute: Attribute {
     private int _minimum = 1;
     private int _maximum = 21;
 
-    /// <summary>The minimum number of elements in the tuple. Only integer literals allowed! Minimum value 1, limited to incl. 21</summary>
+    /// <summary>The minimum number of elements in the tuple. Only integer literals allowed! Must be less then Maximum. Minimum value 1, limited to incl. 21</summary>
     public int Minimum {
         get => _minimum;
         set {
-            if (value < 1 || value > 21) {
+            if (value is < 1 or > 21) {
                 throw new ArgumentOutOfRangeException(nameof(value), "Value must be between one and twenty-one");
             }
             _minimum = value;
         }
     }
-    /// <summary>The maximum number of elements in the tuple. Only integer literals allowed! Minimum value 1, limited to incl. 21</summary>
+    /// <summary>The maximum number of elements in the tuple. Only integer literals allowed! Must be greater then Minimum. Minimum value 1, limited to incl. 21</summary>
     public int Maximum {
         get => _maximum;
         set {
-            if (value < 1 || value > 21) {
+            if (value is < 1 or > 21) {
                 throw new ArgumentOutOfRangeException(nameof(value), "Value must be between one and twenty-one");
             }
             _maximum = value;
