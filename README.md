@@ -2,6 +2,11 @@
 
 ## Supported
 
+[NuGet package](https://www.nuget.org/packages/TupleOverloadGenerator):
+```xml
+<PackageReference Include="TupleOverloadGenerator" Version="1.0.0" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
+```
+
 * .NETCoreApp 3.1
 * .NET 6.0 or greater
 * .NETStandard 2.1 with [System.Memory](https://www.nuget.org/packages/System.Memory) and [System.Runtime.CompilerServices.Unsafe](https://www.nuget.org/packages/System.Runtime.CompilerServices.Unsafe) packages installed.
@@ -99,7 +104,7 @@ GetPinnableReference returns a reference to the first element in the tuple, trea
 This is unsafe, because RYU may reorder the the items, so that the following layout applies:
 
 ```js
-[Item2][Padding][Item1][padding][Item3][padding]
+[Item2][padding][Item1][padding][Item3][padding]
 ```
 
 If the structure has padding, or is reordered this will not work! Therefore its best used with pointer sized values, such as `nint`, `object`, `Func<>`, etc..
