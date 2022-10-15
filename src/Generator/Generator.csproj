@@ -1,22 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-    <IsRoslynComponent>true</IsRoslynComponent>
-    <RootNamespace>TupleOverloadGenerator</RootNamespace>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+		<IsRoslynComponent>true</IsRoslynComponent>
+		<RootNamespace>TupleOverloadGenerator</RootNamespace>
+	</PropertyGroup>
 
-  <PropertyGroup Label="Nuget Pack Options">
-    <Description>Overloads params array argument with inline tuples, circumventing heap allocations.</Description>
-    <AssemblyName>TupleOverloadGenerator</AssemblyName>
-    <PackageTags>Roslyn Source Generator Types Tuple Params Overload Unsafe</PackageTags>
-  </PropertyGroup>
+	<PropertyGroup Label="Nuget Pack Options">
+		<Description>Overloads params array argument with inline tuples, circumventing heap allocations.</Description>
+		<AssemblyName>TupleOverloadGenerator</AssemblyName>
+		<PackageTags>Roslyn Source Generator Types Tuple Params Overload Unsafe</PackageTags>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" PrivateAssets="all" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" PrivateAssets="all" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+	</ItemGroup>
 </Project>

@@ -3,7 +3,7 @@ using System.Text;
 
 namespace BasicUsageExamples;
 
-public readonly partial record struct AffixConcat(string Prefix, string Suffix) {
+public readonly partial record struct AffixConcat(string Prefix, string Infix, string Suffix) {
     public string ConcatInternal(ReadOnlySpan<string> parts) {
         StringBuilder sb = new();
         sb.Append(Prefix);
@@ -11,7 +11,7 @@ public readonly partial record struct AffixConcat(string Prefix, string Suffix) 
         if (en.MoveNext()) {
             sb.Append(en.Current);
             while (en.MoveNext()) {
-                sb.Append(", ");
+                sb.Append(Infix);
                 sb.Append(en.Current);
             }
         }

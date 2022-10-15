@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../src/Common/Common.csproj" />
     <ProjectReference Include="../../src/Generator/Generator.csproj" PrivateAssets="all" OutputItemType="Analyzer" />
   </ItemGroup>
 </Project>

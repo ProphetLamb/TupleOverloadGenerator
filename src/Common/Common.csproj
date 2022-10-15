@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>netstandard21;net70</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup Condition="!$(DefineConstants.Contains('NET6_0_OR_GREATER'))">
+		<PackageReference Include="System.Memory" Version="4.5.5" />
+	</ItemGroup>
+
+</Project>

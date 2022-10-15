@@ -13,19 +13,6 @@ public sealed class Generator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        context.RegisterPostInitializationOutput(static ctx =>
-        {
-            ctx.AddSource(
-                $"{Helper.AttributeName}.g.cs",
-                SourceText.From(Helper.AttributeSource, Encoding.UTF8)
-            );
-            ctx.AddSource(
-                $"{Helper.ExtensionName}.g.cs",
-                SourceText.From(Helper.ExtensionSource, Encoding.UTF8)
-            );
-        }
-        );
-
         var typeContexts = context.SyntaxProvider
            .CreateSyntaxProvider(
                 static (s, _) => IsTypeContextCandidate(s),
@@ -200,7 +187,7 @@ public sealed class Generator : IIncrementalGenerator
     {
         var tupleElements = SyntaxFactory.SeparatedList(Enumerable.Repeat(elementType, count));
         var tupleType = SyntaxFactory.TupleType(tupleElements);
-        // add space after type '(T,T,T)elements' -> '(T,T,T) elements' 
+        // add space after type '(T,T,T)elements' -> '(T,T,T) elements'
         tupleType = tupleType.WithTrailingTrivia(SyntaxFactory.Space);
 
         return SyntaxFactory.Parameter(attributes, modifiers, tupleType, identifier, default);
