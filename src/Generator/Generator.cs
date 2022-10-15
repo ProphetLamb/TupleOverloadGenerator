@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace TupleOverloadGenerator;
 
+[Generator]
 public sealed class Generator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -132,17 +133,38 @@ public sealed class Generator : IIncrementalGenerator
             return default;
         }
 
+        TypeDeclarationSyntax declSyntax = ModifyTypeDeclaration(typeContext, members);
+
+        CompilationUnitSyntax? compWithMembers = ModifyCompilationUnit(typeContext, declSyntax);
+        return compWithMembers;
+    }
+
+    private static TypeDeclarationSyntax ModifyTypeDeclaration(TypeContext typeContext, SyntaxList<MemberDeclarationSyntax> members) {
         var declSyntax = typeContext.Declaration.WithMembers(members);
-        var compilation = typeContext.Declaration.ParentOf<CompilationUnitSyntax>();
-        if (compilation is null)
+        // for records we must remove the parameterlist: 'record Concatinate(string Prefix, string Suffix) {}' -> 'record Concatinate {}'
+        if (declSyntax is RecordDeclarationSyntax record && record.ParameterList is not null) {
+            declSyntax = record.RemoveNode(record.ParameterList, SyntaxRemoveOptions.KeepNoTrivia) ?? declSyntax;
+        }
+
+        return declSyntax;
+    }
+
+    private static CompilationUnitSyntax? ModifyCompilationUnit(TypeContext typeContext, MemberDeclarationSyntax declSyntax) {
+        // the partial modifier only effects members of the same namespace
+        var namespaceDecl = typeContext.Declaration.ParentOf<BaseNamespaceDeclarationSyntax>();
+        var compilationUnit = namespaceDecl?.ParentOf<CompilationUnitSyntax>();
+        if (compilationUnit is null)
         {
             return default;
         }
 
-        // replace all members in compilation with ONLY the declaration syntax
-        var compMembers = SyntaxFactory.List(Enumerable.Repeat((MemberDeclarationSyntax)declSyntax, 1));
-        var compWithMembers = compilation?.WithMembers(compMembers);
-        return compWithMembers;
+        // replace all members in namespace with ONLY the declaration syntax
+        var namespaceMembers = SyntaxFactory.List(Enumerable.Repeat(declSyntax, 1));
+        var modifiedNamespace = namespaceDecl.WithMembers(namespaceMembers);
+
+        var unitMembers = SyntaxFactory.List(Enumerable.Repeat<MemberDeclarationSyntax>(modifiedNamespace, 1));
+        var modifiedUnit = compilationUnit?.WithMembers(unitMembers);
+        return modifiedUnit;
     }
 
     private static IEnumerable<MethodDeclarationSyntax> CreateMember(MethodContext method)
