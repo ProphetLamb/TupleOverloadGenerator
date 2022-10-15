@@ -27,23 +27,23 @@ public sealed class Generator : IIncrementalGenerator
 
         var classContexts = context.SyntaxProvider
            .CreateSyntaxProvider(
-                static (s, _) => IsMethodContextCandidate(s),
-                static (ctx, ct) => GetClassContext(ctx, ct)
+                static (s, _) => IsTypeContextCandidate(s),
+                static (ctx, ct) => GetTypeContext(ctx, ct)
             )
            .Where(static t => !t.IsDefault)
            .Collect();
 
-        IncrementalValueProvider<(Compilation Compilation, ImmutableArray<ClassContext> Contexts)> compilationAndEnums
+        IncrementalValueProvider<(Compilation Compilation, ImmutableArray<TypeContext> Contexts)> compilationAndEnums
             = context.CompilationProvider.Combine(classContexts);
         context.RegisterSourceOutput(compilationAndEnums,
-            static (spc, source) => Execute(source.Compilation, source.Contexts, spc));
+            static (spc, source) => Execute(source.Contexts, spc));
     }
 
-    private static bool IsMethodContextCandidate(SyntaxNode node)
+    private static bool IsTypeContextCandidate(SyntaxNode node)
     {
-        // static partial class with a method which has a body with a argument with a attribute
+        // static partial type decl with a method which has a body with a argument with a attribute
         // its a pretty good heuristic to reduce the number of affected classes
-        return node is ClassDeclarationSyntax decl
+        return node is TypeDeclarationSyntax decl
          && decl.Modifiers.Any(static id => id.Text == "partial")
          && decl.Members.Any(static member
              => member is MethodDeclarationSyntax { Body: { } } method
@@ -51,13 +51,13 @@ public sealed class Generator : IIncrementalGenerator
                  => param.AttributeLists.Attributes().Any()));
     }
 
-    private static ClassContext GetClassContext(GeneratorSyntaxContext ctx, CancellationToken ct)
+    private static TypeContext GetTypeContext(GeneratorSyntaxContext ctx, CancellationToken ct)
     {
-        var classSyntax = (ClassDeclarationSyntax)ctx.Node;
-        var methodsWithAttributes = classSyntax.Members.Where(static member
+        var classSyntax = (TypeDeclarationSyntax)ctx.Node;
+        var methodsWithAttributes = classSyntax.Members.FilterMap(static member
             => member is MethodDeclarationSyntax { Body: { } } method
             && method.ParameterList.Parameters.Any(static param
-                => param.AttributeLists.Any())).Cast<MethodDeclarationSyntax>();
+                => param.AttributeLists.Any()) ? method : default);
 
         var methods = ImmutableArray.CreateBuilder<MethodContext>();
         foreach (MethodDeclarationSyntax method in methodsWithAttributes)
@@ -91,7 +91,7 @@ public sealed class Generator : IIncrementalGenerator
     {
         foreach (AttributeSyntax attribute in param.AttributeLists.Attributes())
         {
-            var model = ModelExtensions.GetSymbolInfo(ctx.SemanticModel, attribute);
+            var model = ctx.SemanticModel.GetSymbolInfo(attribute);
             if (model.Symbol is IMethodSymbol attributeSymbol)
             {
                 var typeName = attributeSymbol.ContainingType.ToDisplayString();
@@ -110,21 +110,21 @@ public sealed class Generator : IIncrementalGenerator
         return param.Modifiers.Any(static modifier => modifier.Text == "params");
     }
 
-    private static void Execute(Compilation compilation, ImmutableArray<ClassContext> classes, SourceProductionContext context)
+    private static void Execute(ImmutableArray<TypeContext> classes, SourceProductionContext context)
     {
         if (!classes.IsDefaultOrEmpty)
         {
             var distinctClasses = classes.Distinct();
-            foreach ((SyntaxToken name, CompilationUnitSyntax compSyntax) in distinctClasses.Select(static classContext => (classContext.Declaration.Identifier, CompSyntax: GenerateSyntaxTree(classContext)!))
-               .NotNull(static t => t.CompSyntax))
+            foreach ((SyntaxToken name, CompilationUnitSyntax compilation) in distinctClasses.FilterMap(static classContext
+                => GenerateSyntaxTree(classContext) is { } compilation ? (classContext.Declaration.Identifier, compilation).Nullable() : default))
             {
-                SourceText sourceText = compSyntax.GetText();
-                context.AddSource($"{name.Text}.cs", sourceText);
+                SourceText sourceText = compilation.GetText();
+                context.AddSource($"{name.Text}.TupleOverload.g.cs", sourceText);
             }
         }
     }
 
-    private static CompilationUnitSyntax? GenerateSyntaxTree(ClassContext classContext)
+    private static CompilationUnitSyntax? GenerateSyntaxTree(TypeContext classContext)
     {
         SyntaxList<MemberDeclarationSyntax> members = new();
         foreach (MethodContext method in classContext.Methods)

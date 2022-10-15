@@ -7,7 +7,7 @@ public static class Helper
 {
     public static string AttributeSource = @"namespace System {
     [AttributeUsage(AttributeTargets.Parameter, Inherited = false)]
-    public class OverloadTupleAttribute: Attribute {
+    public class TupleOverloadAttribute: Attribute {
 
     }
 }
@@ -125,35 +125,34 @@ namespace System {
         return default;
     }
 
-    public static T ReplaceSyntax<T, U>(this T root, U replace, U with)
-        where T : SyntaxNode
-        where U : SyntaxNode
+    public static IEnumerable<U> FilterMap<T, U>(this IEnumerable<T> nodes, Func<T, U?> f)
+        where U : class
     {
-        return root.ReplaceSyntax(
-            Enumerable.Repeat(replace, 1), (node, syntaxNode) => node == replace ? with : syntaxNode,
-            null, null,
-            null, null
-        );
+        foreach (T element in nodes)
+        {
+            if (f(element) is U res)
+            {
+                yield return res;
+            }
+        }
     }
 
-    public static IEnumerable<T> NotNull<T>(this IEnumerable<T?> seq)
+    public static IEnumerable<U> FilterMap<T, U>(this IEnumerable<T> nodes, Func<T, Nullable<U>> f)
+        where U : struct
     {
-        foreach (T? item in seq)
+        foreach (T element in nodes)
         {
-            if (item is not null)
+            var res = f(element);
+            if (res.HasValue)
             {
-                yield return item;
+                yield return res.Value;
             }
         }
     }
-    public static IEnumerable<T> NotNull<T, U>(this IEnumerable<T> seq, Func<T, U?> nullableSelector)
+
+    public static Nullable<T> Nullable<T>(this T value)
+        where T : struct
     {
-        foreach (T? item in seq)
-        {
-            if (nullableSelector(item) is not null)
-            {
-                yield return item!;
-            }
-        }
+        return value;
     }
 }
