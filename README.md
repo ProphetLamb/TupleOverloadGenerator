@@ -15,7 +15,7 @@ This is experimental and uses undefined behaviour! Only tested on Linux
 
 ## Motivation
 
-When producing a library we often which to allow a variable number of arguments to be passed to a given function, such as string `Concat`enation.
+When producing a library we often wish to allow a variable number of arguments to be passed to a given function, such as string `Concat`enation.
 Historically the `params` keyword followed by an array type `string[]` has been to conveniently indroduce a parameter with a variable number of arguments.
 However a array introduces a few problems, the most prevalent of which is that the array is allocated on the heap.
 
