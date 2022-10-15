@@ -1,8 +1,3 @@
-  <br />
-    <p align="center">
-    <img src="icon.png" alt="Logo" width="300" height="300">
-  </a>
-
 # TupleOverloadGenerator
 
 ## Supported
