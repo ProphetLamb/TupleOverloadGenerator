@@ -27,7 +27,6 @@ internal partial class TestClass {
     }
 }
 ";
-        // Pass the source code to our helper and snapshot test the output
         return TestHelper.Verify(source);
     }
 }

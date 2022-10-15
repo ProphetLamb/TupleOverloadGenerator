@@ -46,3 +46,6 @@ coverage*.xml
 docs/src
 docs/index.md
 publish/
+
+# Snapshot TestResults
+*.received.cs

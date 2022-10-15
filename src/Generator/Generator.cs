@@ -15,17 +15,17 @@ public sealed class Generator : IIncrementalGenerator
         context.RegisterPostInitializationOutput(static ctx =>
         {
             ctx.AddSource(
-                "OverloadTuple.g.cs",
+                $"{Helper.AttributeName}.g.cs",
                 SourceText.From(Helper.AttributeSource, Encoding.UTF8)
             );
             ctx.AddSource(
-                "TupleExtensions.g.cs",
+                $"{Helper.ExtensionName}.g.cs",
                 SourceText.From(Helper.ExtensionSource, Encoding.UTF8)
             );
         }
         );
 
-        var classContexts = context.SyntaxProvider
+        var typeContexts = context.SyntaxProvider
            .CreateSyntaxProvider(
                 static (s, _) => IsTypeContextCandidate(s),
                 static (ctx, ct) => GetTypeContext(ctx, ct)
@@ -34,7 +34,7 @@ public sealed class Generator : IIncrementalGenerator
            .Collect();
 
         IncrementalValueProvider<(Compilation Compilation, ImmutableArray<TypeContext> Contexts)> compilationAndEnums
-            = context.CompilationProvider.Combine(classContexts);
+            = context.CompilationProvider.Combine(typeContexts);
         context.RegisterSourceOutput(compilationAndEnums,
             static (spc, source) => Execute(source.Contexts, spc));
     }
@@ -42,7 +42,7 @@ public sealed class Generator : IIncrementalGenerator
     private static bool IsTypeContextCandidate(SyntaxNode node)
     {
         // static partial type decl with a method which has a body with a argument with a attribute
-        // its a pretty good heuristic to reduce the number of affected classes
+        // its a pretty good heuristic to reduce the number of affected types
         return node is TypeDeclarationSyntax decl
          && decl.Modifiers.Any(static id => id.Text == "partial")
          && decl.Members.Any(static member
@@ -53,8 +53,8 @@ public sealed class Generator : IIncrementalGenerator
 
     private static TypeContext GetTypeContext(GeneratorSyntaxContext ctx, CancellationToken ct)
     {
-        var classSyntax = (TypeDeclarationSyntax)ctx.Node;
-        var methodsWithAttributes = classSyntax.Members.FilterMap(static member
+        var typeDecl = (TypeDeclarationSyntax)ctx.Node;
+        var methodsWithAttributes = typeDecl.Members.FilterMap(static member
             => member is MethodDeclarationSyntax { Body: { } } method
             && method.ParameterList.Parameters.Any(static param
                 => param.AttributeLists.Any()) ? method : default);
@@ -66,7 +66,7 @@ public sealed class Generator : IIncrementalGenerator
             ct.ThrowIfCancellationRequested();
         }
 
-        return new(classSyntax, methods.ToImmutable());
+        return new(typeDecl, methods.ToImmutable());
     }
 
     private static MethodContext GetMethodContext(GeneratorSyntaxContext ctx, MethodDeclarationSyntax method)
@@ -91,11 +91,11 @@ public sealed class Generator : IIncrementalGenerator
     {
         foreach (AttributeSyntax attribute in param.AttributeLists.Attributes())
         {
-            var model = ctx.SemanticModel.GetSymbolInfo(attribute);
-            if (model.Symbol is IMethodSymbol attributeSymbol)
+            var model = ctx.SemanticModel.GetTypeInfo(attribute);
+            if (model.Type is not null)
             {
-                var typeName = attributeSymbol.ContainingType.ToDisplayString();
-                if (typeName == "System.OverloadTupleAttribute")
+                var typeName = model.Type.ToDisplayString();
+                if (typeName == Helper.AttributeTypeName)
                 {
                     return true;
                 }
@@ -115,33 +115,25 @@ public sealed class Generator : IIncrementalGenerator
         if (!classes.IsDefaultOrEmpty)
         {
             var distinctClasses = classes.Distinct();
-            foreach ((SyntaxToken name, CompilationUnitSyntax compilation) in distinctClasses.FilterMap(static classContext
-                => GenerateSyntaxTree(classContext) is { } compilation ? (classContext.Declaration.Identifier, compilation).Nullable() : default))
+            foreach ((SyntaxToken name, CompilationUnitSyntax compilation) in distinctClasses.FilterMap(static typeContext
+                => GenerateSyntaxTree(typeContext) is { } compilation ? (typeContext.Declaration.Identifier, compilation).Nullable() : default))
             {
-                SourceText sourceText = compilation.GetText();
-                context.AddSource($"{name.Text}.TupleOverload.g.cs", sourceText);
+                SourceText sourceText = compilation.GetText(Encoding.Default);
+                context.AddSource($"{name.Text}.{Helper.AttributeName}.g.cs", sourceText);
             }
         }
     }
 
-    private static CompilationUnitSyntax? GenerateSyntaxTree(TypeContext classContext)
-    {
-        SyntaxList<MemberDeclarationSyntax> members = new();
-        foreach (MethodContext method in classContext.Methods)
-        {
-            foreach (MethodDeclarationSyntax methodSyntax in CreateMember(method))
-            {
-                members.Add(methodSyntax);
-            }
-        }
+    private static CompilationUnitSyntax? GenerateSyntaxTree(TypeContext typeContext) {
+        var members = SyntaxFactory.List<MemberDeclarationSyntax>(typeContext.Methods.SelectMany(static method => CreateMember(method)));
 
         if (members.Count <= 0)
         {
             return default;
         }
 
-        var declSyntax = classContext.Declaration.WithMembers(members);
-        var compilation = classContext.Declaration.ParentOf<CompilationUnitSyntax>();
+        var declSyntax = typeContext.Declaration.WithMembers(members);
+        var compilation = typeContext.Declaration.ParentOf<CompilationUnitSyntax>();
         if (compilation is null)
         {
             return default;
@@ -186,6 +178,8 @@ public sealed class Generator : IIncrementalGenerator
     {
         var tupleElements = SyntaxFactory.SeparatedList(Enumerable.Repeat(elementType, count));
         var tupleType = SyntaxFactory.TupleType(tupleElements);
+        // add space after type '(T,T,T)elements' -> '(T,T,T) elements' 
+        tupleType = tupleType.WithTrailingTrivia(SyntaxFactory.Space);
 
         return SyntaxFactory.Parameter(attributes, modifiers, tupleType, identifier, default);
     }
