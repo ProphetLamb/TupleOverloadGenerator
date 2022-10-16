@@ -11,11 +11,9 @@ namespace TupleOverloadGenerator;
 /// <summary>Overload `params` array parameter with tuples avoiding heap allocations.</summary>
 /// <remarks>ONLY REFERENCE THIS PROJECT AS A ANALYZER, NOT A ASSET</remarks>
 [Generator]
-public sealed class Generator : IIncrementalGenerator
-{
+public sealed class Generator : IIncrementalGenerator {
     /// <inheritdoc />
-    public void Initialize(IncrementalGeneratorInitializationContext context)
-    {
+    public void Initialize(IncrementalGeneratorInitializationContext context) {
         var typeContexts = context.SyntaxProvider
            .CreateSyntaxProvider(
                 static (s, _) => IsTypeContextCandidate(s),
@@ -30,8 +28,7 @@ public sealed class Generator : IIncrementalGenerator
             static (spc, source) => Execute(source.Contexts, spc));
     }
 
-    private static bool IsTypeContextCandidate(SyntaxNode node)
-    {
+    private static bool IsTypeContextCandidate(SyntaxNode node) {
         // static partial type decl with a method which has a body with a argument with a attribute
         // its a pretty good heuristic to reduce the number of affected types
         return node is TypeDeclarationSyntax decl
@@ -42,8 +39,7 @@ public sealed class Generator : IIncrementalGenerator
                  => param.AttributeLists.Attributes().Any()));
     }
 
-    private static TypeContext GetTypeContext(GeneratorSyntaxContext ctx, CancellationToken ct)
-    {
+    private static TypeContext GetTypeContext(GeneratorSyntaxContext ctx, CancellationToken ct) {
         var typeDecl = (TypeDeclarationSyntax)ctx.Node;
         var methodsWithAttributes = typeDecl.Members.FilterMap(static member
             => member is MethodDeclarationSyntax { Body: { } } method
@@ -170,8 +166,7 @@ public sealed class Generator : IIncrementalGenerator
         return unit;
     }
 
-    private static IEnumerable<MethodDeclarationSyntax> CreateMember(MethodContext method)
-    {
+    private static IEnumerable<MethodDeclarationSyntax> CreateMember(MethodContext method) {
         foreach (ParameterSyntax newParam in CreateTupleParameters(method.Param))
         {
             ParameterListSyntax paramList = method.Method.ParameterList;
@@ -181,8 +176,7 @@ public sealed class Generator : IIncrementalGenerator
         }
     }
 
-    private static IEnumerable<ParameterSyntax> CreateTupleParameters(ParamContext context)
-    {
+    private static IEnumerable<ParameterSyntax> CreateTupleParameters(ParamContext context) {
         // remove params from the modifiers
         var paramModifier = context.Param.Modifiers.First(static modifier => modifier.ToString() == "params");
         var modifiers = context.Param.Modifiers.Remove(paramModifier);
@@ -202,7 +196,6 @@ public sealed class Generator : IIncrementalGenerator
     private static SyntaxTrivia[] SpaceTrivia { get; } = { SyntaxFactory.Space };
 
     private static ParameterSyntax CreateParameter(ParamContext context, SyntaxTokenList modifiers, TypeSyntax type) {
-
         // add space after type 'ValueTuple<T>elements' -> 'ValueTuple<T> elements'
         var typeWithTrivia = type.WithTrailingTrivia(SpaceTrivia);
         return SyntaxFactory.Parameter(context.Param.AttributeLists, modifiers, typeWithTrivia, context.Param.Identifier, default);

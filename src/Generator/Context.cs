@@ -5,8 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace TupleOverloadGenerator;
 
 [Serializable]
-internal record struct TypeContext(TypeDeclarationSyntax Declaration, ImmutableArray<MethodContext> Methods)
-{
+internal record struct TypeContext(TypeDeclarationSyntax Declaration, ImmutableArray<MethodContext> Methods) {
     public bool IsDefault => default == this;
 }
 
@@ -16,7 +15,6 @@ internal record struct ParamContext(ParameterSyntax Param, string ElementType, i
 }
 
 [Serializable]
-internal record struct MethodContext(MethodDeclarationSyntax Method, ParamContext Param)
-{
+internal record struct MethodContext(MethodDeclarationSyntax Method, ParamContext Param) {
     public bool IsDefault => default == this;
 }

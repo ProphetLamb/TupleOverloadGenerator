@@ -15,8 +15,7 @@ internal  static class Helper {
         }
     }
 
-    public static T? ParentOf<T>(this SyntaxNode? node)
-    {
+    public static T? ParentOf<T>(this SyntaxNode? node) {
         while (node is not null) {
             if (node is T res){
                 return res;

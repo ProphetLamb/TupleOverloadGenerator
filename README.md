@@ -121,7 +121,7 @@ public partial readonly record struct AffixConcat {
         ReadOnlySpan<string> partsSpan = parts.AsSpan();
         return Concat(partsSpan);
     }
-		[...]
+    [...]
     public string Concat([TupleOverload] (string, [...through 21]) parts) {
         ReadOnlySpan<string> partsSpan = parts.AsSpan();
         return Concat(partsSpan);
@@ -187,4 +187,4 @@ The primary issue here is that [MemoryMarshal.CreateSpan](https://learn.microsof
 
 Other then that the `in` keyword for the parameter too can be a problem. It specifies that the readonly-**reference** to the struct is passed instead of the struct itself. In and of itself this is not a problem, but the memory analyzer will complain when returning the span to a different context.
 
-All in all, I have tested this with `3.1.423`, `6.0.401` and `7.0.0-rc.2.22472.3` on Linux and with .NET Framwork `4.8.1` on Windows. The funcionality is untested on macOS.
+All in all, I have tested this with `3.1.423`, `6.0.401` and `7.0.0-rc.2.22472.3` on Linux and with .NET Framework `4.8.1` on Windows. The funcionality is untested on macOS.
