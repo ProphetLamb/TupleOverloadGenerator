@@ -1,7 +1,7 @@
 
 <p align="center">
 	<a href="https://www.nuget.org/packages/TupleOverloadGenerator"><img src="https://img.shields.io/nuget/dt/TupleOverloadGenerator?label=Generator&style=for-the-badge" /></a>
-	<a href="https://www.nuget.org/packages/TupleOverloadGenerator"><img src="https://img.shields.io/nuget/dt/TupleOverloadGenerator.Types?label=Generator.Types&style=for-the-badge" /></a>
+	<a href="https://www.nuget.org/packages/TupleOverloadGenerator.Types"><img src="https://img.shields.io/nuget/dt/TupleOverloadGenerator.Types?label=Generator.Types&style=for-the-badge" /></a>
 	<br/>
 	<img src="img/banner.png" alt="Logo" width="305" height="125">
 </p>
