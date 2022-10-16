@@ -25,7 +25,7 @@
 
 ## Supported
 
-[Generator](https://www.nuget.org/packages/TupleOverloadGenerator) and [Types](https://www.nuget.org/packages/TupleOverloadGenerator.Types) NuGet package:
+[Generator](https://www.nuget.org/packages/TupleOverloadGenerator) and [Types](https://www.nuget.org/packages/TupleOverloadGenerator.Types) NuGet packages are required:
 ```xml
 <PackageReference Include="TupleOverloadGenerator.Types" Version="1.0.2" />
 <PackageReference Include="TupleOverloadGenerator" Version="1.0.2" ReferenceOutputAssembly="false" OutputItemType="Analyzer" />
