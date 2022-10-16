@@ -1,5 +1,8 @@
-<br />
+
 <p align="center">
+	<img src="https://img.shields.io/nuget/dt/TupleOverloadGenerator?label=Generator&style=for-the-badge" />
+	<img src="https://img.shields.io/nuget/dt/TupleOverloadGenerator.Types?label=Generator.Types&style=for-the-badge" />
+	<br/>
 	<img src="img/banner.png" alt="Logo" width="305" height="125">
 </p>
 <h1 align="center">TupleOverloadGenerator</h1>
