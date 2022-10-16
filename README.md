@@ -1,12 +1,27 @@
 
 <p align="center">
-	<img src="https://img.shields.io/nuget/dt/TupleOverloadGenerator?label=Generator&style=for-the-badge" />
-	<img src="https://img.shields.io/nuget/dt/TupleOverloadGenerator.Types?label=Generator.Types&style=for-the-badge" />
+	<a href="https://www.nuget.org/packages/TupleOverloadGenerator"><img src="https://img.shields.io/nuget/dt/TupleOverloadGenerator?label=Generator&style=for-the-badge" /></a>
+	<a href="https://www.nuget.org/packages/TupleOverloadGenerator"><img src="https://img.shields.io/nuget/dt/TupleOverloadGenerator.Types?label=Generator.Types&style=for-the-badge" /></a>
 	<br/>
 	<img src="img/banner.png" alt="Logo" width="305" height="125">
 </p>
 <h1 align="center">TupleOverloadGenerator</h1>
 <p align="center">Overload <code>params</code> array parameter with tuples avoiding heap allocations.</p>
+
+## Table of Contents
+
+- [Table of Contents](#table-of-contents)
+- [Supported](#supported)
+- [Motivation](#motivation)
+	- [Stackalloc](#stackalloc)
+	- [Pool](#pool)
+	- [Tuple](#tuple)
+- [Example](#example)
+	- [Generated](#generated)
+- [Behind the scenes](#behind-the-scenes)
+	- [Tuple as Span](#tuple-as-span)
+	- [GetPinnableReference](#getpinnablereference)
+	- [AsSpan & AsRoSpan](#asspan--asrospan)
 
 ## Supported
 
@@ -26,6 +41,8 @@ When producing a library we often wish to allow a variable number of arguments t
 Historically the `params` keyword followed by an array type (e.g. `params string[]`) has been to conveniently introduce a parameter with a variable number of arguments.
 However an array introduces a few problems, the most prevalent of which is that the array is allocated on the heap.
 
+### Stackalloc
+
 Modern libraries should therefore allow the user to pass a `Span` instead of an array, this approach is the most performant, yet calling the function is inconvenient and still requires a heap allocation for managed, and non-blittable types, where `stackalloc` is not usable.
 
 | **DON'T** |
@@ -37,6 +54,8 @@ parts[1] = [...]
 AffixConcat concat = new("[", "]");
 return concat.Concat(parts);
 ```
+
+### Pool
 
 Alternatively an `ArrayPool` can be used, in the best case reducing the number of allocations from `n` to `1` for any given size, where `n` is the number of calls to the function. We still have allocations, and the syntax becomes even more unwieldy.
 
@@ -51,6 +70,8 @@ AffixConcat concat = new("[", "]");
 var result = concat.Concat(parts);
 ArrayPool<string>.Shared.Return(poolArray);
 ```
+
+### Tuple
 
 The solution is overloads with inline arrays. These can be represented by tuples with a single generic type parameter used for different arities. `TupleOverloadGenerator` generates these overloads for parameter array parameters decorated with the `[TupleOverload]` attribute.
 The avoids any heap allocation at all, because we can assign any type `T` to a tuple item. `struct ValueTuple<T, ...>` is the underlaying type of `(T, ...)`. By default the struct lives on the stack.
@@ -106,6 +127,8 @@ Please note that the example above is for demonstration purposes only! I advise 
 
 The following file is generated for the example above.
 
+### Generated
+
 ```csharp
 using System;
 using System.Text;
@@ -140,6 +163,8 @@ The optional parameters `TupleOverload(Minimum=1, Maximum=21)` determine which o
 - `GetPinnableReference(): ref T` - Returns the pinnable reference to the first element in the tuple/array.
 
 The sourcegenerator `TupleOverloadGenerator` primarly **replaces** the params parameter type with a given tuple type (e.g. `params string[]` -> `(string, string, string)`).
+
+### Tuple as Span
 
 **Tuples cannot be cast to a span can they?**
 No, they cannot. At least not trivially. To obtain a span from a tuple, we have to cheat, and by cheat I mean unsafe hacks that may not work in the future.
