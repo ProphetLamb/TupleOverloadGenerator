@@ -86,7 +86,7 @@ public sealed class Generator : IIncrementalGenerator {
             return default;
         }
 
-        return new(param, type.ElementType.Name, min, max);
+        return new(param, type.ElementType.ToDisplayString(), min, max);
     }
 
     private static AttributeSyntax? GetOverloadTupleParameter(GeneratorSyntaxContext ctx, BaseParameterSyntax param) {
