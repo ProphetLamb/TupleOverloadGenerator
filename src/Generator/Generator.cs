@@ -34,7 +34,8 @@ public sealed class Generator : IIncrementalGenerator {
         return node is TypeDeclarationSyntax decl
          && decl.Modifiers.Any(static id => id.Text == "partial")
          && decl.Members.Any(static member
-             => member is MethodDeclarationSyntax { Body: { } } method
+             => member is MethodDeclarationSyntax method
+             && (method.Body is not null || method.ExpressionBody is not null)
              && method.ParameterList.Parameters.Any(static param
                  => param.AttributeLists.Attributes().Any()));
     }
@@ -42,7 +43,7 @@ public sealed class Generator : IIncrementalGenerator {
     private static TypeContext GetTypeContext(GeneratorSyntaxContext ctx, CancellationToken ct) {
         var typeDecl = (TypeDeclarationSyntax)ctx.Node;
         var methodsWithAttributes = typeDecl.Members.FilterMap(static member
-            => member is MethodDeclarationSyntax { Body: { } } method
+            => member is MethodDeclarationSyntax method
             && method.ParameterList.Parameters.Any(static param
                 => param.AttributeLists.Any()) ? method : default);
 
@@ -116,7 +117,7 @@ public sealed class Generator : IIncrementalGenerator {
                     => GenerateSyntaxTree(typeContext) is { } compilation ? (typeContext.Declaration.Identifier, Unit: compilation).Nullable() : default),
             ctx => {
                 SourceText sourceText = ctx.Unit.GetText(Encoding.Default);
-                lock(guard) {
+                lock (guard) {
                     context.AddSource($"{ctx.Identifier.Text}.{Helper.ATTRIBUTE_NAME}.g.cs", sourceText);
                 }
             }
@@ -126,8 +127,7 @@ public sealed class Generator : IIncrementalGenerator {
     private static CompilationUnitSyntax? GenerateSyntaxTree(TypeContext typeContext) {
         var members = SyntaxFactory.List<MemberDeclarationSyntax>(typeContext.Methods.SelectMany(static method => CreateMember(method)));
 
-        if (members.Count <= 0)
-        {
+        if (members.Count <= 0) {
             return default;
         }
 
@@ -151,8 +151,7 @@ public sealed class Generator : IIncrementalGenerator {
         // the partial modifier only effects members of the same namespace
         var namespaceDecl = typeContext.Declaration.ParentOf<BaseNamespaceDeclarationSyntax>();
         var unit = namespaceDecl?.ParentOf<CompilationUnitSyntax>();
-        if (namespaceDecl is null || unit is null)
-        {
+        if (namespaceDecl is null || unit is null) {
             // TODO: diagnostics
             return default;
         }
@@ -167,8 +166,7 @@ public sealed class Generator : IIncrementalGenerator {
     }
 
     private static IEnumerable<MethodDeclarationSyntax> CreateMember(MethodContext method) {
-        foreach (ParameterSyntax newParam in CreateTupleParameters(method.Param))
-        {
+        foreach (ParameterSyntax newParam in CreateTupleParameters(method.Param)) {
             ParameterListSyntax paramList = method.Method.ParameterList;
             var parameters = paramList.Parameters.Replace(method.Param.Param, newParam);
             var newParamList = paramList.WithParameters(parameters);
@@ -187,8 +185,7 @@ public sealed class Generator : IIncrementalGenerator {
             // `ValueTuple<T>` as `(T)` is invalid syntax. Explicit type is required for count = 1
             yield return CreateParameter(context, modifiers, CreateValueTuple(elementSyntax, 1));
         }
-        for (int i = Math.Max(2, context.Minimum); i <= context.Maximum; i++)
-        {
+        for (int i = Math.Max(2, context.Minimum); i <= context.Maximum; i++) {
             yield return CreateParameter(context, modifiers, CreateTuple(tupleElement, i));
         }
     }
@@ -208,8 +205,7 @@ public sealed class Generator : IIncrementalGenerator {
         return SyntaxFactory.GenericName(ValueTupleIdentifier, SyntaxFactory.TypeArgumentList(typeArgs));
     }
 
-    private static TupleTypeSyntax CreateTuple(TupleElementSyntax elementType, int count)
-    {
+    private static TupleTypeSyntax CreateTuple(TupleElementSyntax elementType, int count) {
         var tupleElements = SyntaxFactory.SeparatedList(Enumerable.Repeat(elementType, count));
         return SyntaxFactory.TupleType(tupleElements);
     }
